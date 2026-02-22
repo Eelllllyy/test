@@ -18,148 +18,165 @@ internal sealed class MainForm : Form
     public MainForm()
     {
         Text = "Программа проверки информационной безопасности";
-        Width = 620;
-        Height = 520;
+        ClientSize = new Size(1320, 1060);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
 
-        var root = new Panel
+        var root = new TableLayoutPanel
         {
             Dock = DockStyle.Fill,
-            Padding = new Padding(10)
+            Padding = new Padding(12),
+            ColumnCount = 1,
+            RowCount = 3
         };
 
-        var firewallGroup = BuildFirewallGroup();
-        firewallGroup.Top = 10;
-        firewallGroup.Left = 10;
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 300));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 300));
+        root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        var antivirusGroup = BuildAntivirusGroup();
-        antivirusGroup.Top = firewallGroup.Bottom + 8;
-        antivirusGroup.Left = 10;
-
-        var resultsGroup = BuildResultsGroup();
-        resultsGroup.Top = antivirusGroup.Bottom + 8;
-        resultsGroup.Left = 10;
-
-        root.Controls.Add(firewallGroup);
-        root.Controls.Add(antivirusGroup);
-        root.Controls.Add(resultsGroup);
+        root.Controls.Add(BuildFirewallGroup(), 0, 0);
+        root.Controls.Add(BuildAntivirusGroup(), 0, 1);
+        root.Controls.Add(BuildResultsGroup(), 0, 2);
 
         Controls.Add(root);
     }
 
     private GroupBox BuildFirewallGroup()
     {
-        var group = new GroupBox
-        {
-            Text = "Проверка межсетевого экрана",
-            Width = 580,
-            Height = 135
-        };
+        var group = CreateGroup("Проверка межсетевого экрана");
+        var grid = CreateChecksGrid();
 
-        AddRow(group, 20, "Проверка подключения к Интернету", OnCheckInternet, _internetTextBox);
-        AddRow(group, 62, "Проверка наличия установленного\nмежсетевого экрана", OnCheckFirewallInstalled, _firewallInstalledTextBox);
-        AddRow(group, 104, "Проверка работоспособности\nмежсетевого экрана", OnCheckFirewallOperational, _firewallOperationalTextBox);
+        AddCheckRow(grid, 0, "Проверка подключения к Интернету", OnCheckInternet, _internetTextBox);
+        AddCheckRow(grid, 1, "Проверка наличия установленного\nмежсетевого экрана", OnCheckFirewallInstalled, _firewallInstalledTextBox);
+        AddCheckRow(grid, 2, "Проверка работоспособности\nмежсетевого экрана", OnCheckFirewallOperational, _firewallOperationalTextBox);
 
+        group.Controls.Add(grid);
         return group;
     }
 
     private GroupBox BuildAntivirusGroup()
     {
-        var group = new GroupBox
-        {
-            Text = "Проверка антивирусного программного обеспечения",
-            Width = 580,
-            Height = 165
-        };
+        var group = CreateGroup("Проверка антивирусного программного обеспечения");
+        var grid = CreateChecksGrid();
 
-        AddRow(group, 20, "Проверка наличия установленного\nантивируса", OnCheckAntivirusInstalled, _antivirusInstalledTextBox);
-        AddRow(group, 62, "Проверка работоспособности\nантивирусного ПО", OnCheckAntivirusOperational, _antivirusOperationalTextBox);
-        AddRow(group, 104, "Тестирование антивирусного ПО", OnTestAntivirus, _antivirusTestTextBox);
+        AddCheckRow(grid, 0, "Проверка наличия установленного\nантивируса", OnCheckAntivirusInstalled, _antivirusInstalledTextBox);
+        AddCheckRow(grid, 1, "Проверка работоспособности\nантивирусного ПО", OnCheckAntivirusOperational, _antivirusOperationalTextBox);
+        AddCheckRow(grid, 2, "Тестирование антивирусного ПО", OnTestAntivirus, _antivirusTestTextBox);
 
+        group.Controls.Add(grid);
         return group;
     }
 
     private GroupBox BuildResultsGroup()
     {
-        var group = new GroupBox
+        var group = CreateGroup("Результаты проверок и рекомендации");
+
+        var layout = new TableLayoutPanel
         {
-            Text = "Результаты проверок и рекомендации",
-            Width = 580,
-            Height = 160
+            Dock = DockStyle.Fill,
+            Padding = new Padding(10),
+            ColumnCount = 2,
+            RowCount = 1
         };
+
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 83));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 17));
 
         _summaryTextBox.Multiline = true;
         _summaryTextBox.ScrollBars = ScrollBars.Vertical;
-        _summaryTextBox.Left = 10;
-        _summaryTextBox.Top = 22;
-        _summaryTextBox.Width = 425;
-        _summaryTextBox.Height = 125;
+        _summaryTextBox.Dock = DockStyle.Fill;
 
-        var btnPrint = new Button
+        var rightButtons = new TableLayoutPanel
         {
-            Text = "Вывести\nрезультаты",
-            Left = 445,
-            Top = 22,
-            Width = 120,
-            Height = 38
+            Dock = DockStyle.Fill,
+            ColumnCount = 1,
+            RowCount = 4,
+            Padding = new Padding(10, 20, 10, 10)
         };
-        btnPrint.Click += OnPrintSummary;
+        rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
+        rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 110));
+        rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
+        rightButtons.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
-        var btnSave = new Button
-        {
-            Text = "Сохранить\nрезультаты в\nфайл",
-            Left = 445,
-            Top = 68,
-            Width = 120,
-            Height = 48
-        };
-        btnSave.Click += OnSaveSummaryToFile;
+        var btnPrint = CreateActionButton("Вывести\nрезультаты", OnPrintSummary);
+        var btnSave = CreateActionButton("Сохранить\nрезультаты в\nфайл", OnSaveSummaryToFile);
+        var btnExit = CreateActionButton("Выход", (_, _) => Close());
 
-        var btnExit = new Button
-        {
-            Text = "Выход",
-            Left = 445,
-            Top = 121,
-            Width = 120,
-            Height = 26
-        };
-        btnExit.Click += (_, _) => Close();
+        rightButtons.Controls.Add(btnPrint, 0, 0);
+        rightButtons.Controls.Add(btnSave, 0, 1);
+        rightButtons.Controls.Add(btnExit, 0, 2);
 
-        group.Controls.Add(_summaryTextBox);
-        group.Controls.Add(btnPrint);
-        group.Controls.Add(btnSave);
-        group.Controls.Add(btnExit);
+        layout.Controls.Add(_summaryTextBox, 0, 0);
+        layout.Controls.Add(rightButtons, 1, 0);
 
+        group.Controls.Add(layout);
         return group;
     }
 
-    private static void AddRow(Control parent, int top, string title, EventHandler handler, TextBox output)
+    private static GroupBox CreateGroup(string title) => new()
+    {
+        Text = title,
+        Dock = DockStyle.Fill,
+        Padding = new Padding(10)
+    };
+
+    private static TableLayoutPanel CreateChecksGrid()
+    {
+        var grid = new TableLayoutPanel
+        {
+            Dock = DockStyle.Fill,
+            ColumnCount = 2,
+            RowCount = 3,
+            Padding = new Padding(8)
+        };
+
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 500));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
+
+        return grid;
+    }
+
+    private static void AddCheckRow(TableLayoutPanel grid, int row, string title, EventHandler handler, TextBox output)
     {
         var button = new Button
         {
             Text = title,
-            Left = 10,
-            Top = top,
-            Width = 205,
-            Height = 36
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 0, 12, 8),
+            Font = new Font("Segoe UI", 14F, FontStyle.Regular, GraphicsUnit.Point)
         };
         button.Click += handler;
 
-        output.Left = 223;
-        output.Top = top;
-        output.Width = 345;
-        output.Height = 36;
+        output.Dock = DockStyle.Fill;
+        output.Margin = new Padding(0, 0, 0, 8);
+        output.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point);
 
-        parent.Controls.Add(button);
-        parent.Controls.Add(output);
+        grid.Controls.Add(button, 0, row);
+        grid.Controls.Add(output, 1, row);
+    }
+
+    private static Button CreateActionButton(string text, EventHandler onClick)
+    {
+        var button = new Button
+        {
+            Text = text,
+            Dock = DockStyle.Fill,
+            Margin = new Padding(0, 0, 0, 12),
+            Font = new Font("Segoe UI", 14F, FontStyle.Regular, GraphicsUnit.Point)
+        };
+        button.Click += onClick;
+        return button;
     }
 
     private static TextBox CreateReadOnlyTextBox(bool multiline = false) => new()
     {
         ReadOnly = true,
-        Multiline = multiline
+        Multiline = multiline,
+        BorderStyle = BorderStyle.FixedSingle
     };
 
     private void OnCheckInternet(object? sender, EventArgs e)
