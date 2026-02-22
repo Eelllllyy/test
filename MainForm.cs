@@ -6,81 +6,161 @@ namespace SecurityCheckApp;
 internal sealed class MainForm : Form
 {
     private readonly TextBox _internetTextBox = CreateReadOnlyTextBox();
-    private readonly TextBox _installedTextBox = CreateReadOnlyTextBox();
-    private readonly TextBox _firewallTextBox = CreateReadOnlyTextBox();
-    private readonly TextBox _antivirusTextBox = CreateReadOnlyTextBox();
+    private readonly TextBox _firewallInstalledTextBox = CreateReadOnlyTextBox();
+    private readonly TextBox _firewallOperationalTextBox = CreateReadOnlyTextBox();
+
+    private readonly TextBox _antivirusInstalledTextBox = CreateReadOnlyTextBox();
+    private readonly TextBox _antivirusOperationalTextBox = CreateReadOnlyTextBox();
+    private readonly TextBox _antivirusTestTextBox = CreateReadOnlyTextBox();
+
     private readonly TextBox _summaryTextBox = CreateReadOnlyTextBox(multiline: true);
 
     public MainForm()
     {
-        Text = "Проверка антивируса и межсетевого экрана";
-        Width = 940;
-        Height = 700;
+        Text = "Программа проверки информационной безопасности";
+        Width = 620;
+        Height = 520;
         StartPosition = FormStartPosition.CenterScreen;
+        FormBorderStyle = FormBorderStyle.FixedSingle;
+        MaximizeBox = false;
 
-        var panel = new TableLayoutPanel
+        var root = new Panel
         {
             Dock = DockStyle.Fill,
-            ColumnCount = 3,
-            RowCount = 7,
-            Padding = new Padding(10),
-            AutoSize = true
+            Padding = new Padding(10)
         };
 
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 320));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 220));
-        panel.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        var firewallGroup = BuildFirewallGroup();
+        firewallGroup.Top = 10;
+        firewallGroup.Left = 10;
 
-        AddRow(panel, 0, "1) Проверка подключения к интернету", OnCheckInternet, _internetTextBox);
-        AddRow(panel, 1, "2) Проверка наличия МЭ и АВ", OnCheckInstalled, _installedTextBox);
-        AddRow(panel, 2, "3) Проверка работоспособности МЭ", OnCheckFirewall, _firewallTextBox);
-        AddRow(panel, 3, "4) Проверка работоспособности АВ", OnCheckAntivirus, _antivirusTextBox);
+        var antivirusGroup = BuildAntivirusGroup();
+        antivirusGroup.Top = firewallGroup.Bottom + 8;
+        antivirusGroup.Left = 10;
 
-        var printButton = new Button { Text = "Вывод результатов", Dock = DockStyle.Fill, Height = 34 };
-        printButton.Click += OnPrintSummary;
-        panel.Controls.Add(printButton, 0, 4);
+        var resultsGroup = BuildResultsGroup();
+        resultsGroup.Top = antivirusGroup.Bottom + 8;
+        resultsGroup.Left = 10;
 
-        panel.SetColumnSpan(_summaryTextBox, 2);
-        _summaryTextBox.Height = 220;
+        root.Controls.Add(firewallGroup);
+        root.Controls.Add(antivirusGroup);
+        root.Controls.Add(resultsGroup);
+
+        Controls.Add(root);
+    }
+
+    private GroupBox BuildFirewallGroup()
+    {
+        var group = new GroupBox
+        {
+            Text = "Проверка межсетевого экрана",
+            Width = 580,
+            Height = 135
+        };
+
+        AddRow(group, 20, "Проверка подключения к Интернету", OnCheckInternet, _internetTextBox);
+        AddRow(group, 62, "Проверка наличия установленного\nмежсетевого экрана", OnCheckFirewallInstalled, _firewallInstalledTextBox);
+        AddRow(group, 104, "Проверка работоспособности\nмежсетевого экрана", OnCheckFirewallOperational, _firewallOperationalTextBox);
+
+        return group;
+    }
+
+    private GroupBox BuildAntivirusGroup()
+    {
+        var group = new GroupBox
+        {
+            Text = "Проверка антивирусного программного обеспечения",
+            Width = 580,
+            Height = 165
+        };
+
+        AddRow(group, 20, "Проверка наличия установленного\nантивируса", OnCheckAntivirusInstalled, _antivirusInstalledTextBox);
+        AddRow(group, 62, "Проверка работоспособности\nантивирусного ПО", OnCheckAntivirusOperational, _antivirusOperationalTextBox);
+        AddRow(group, 104, "Тестирование антивирусного ПО", OnTestAntivirus, _antivirusTestTextBox);
+
+        return group;
+    }
+
+    private GroupBox BuildResultsGroup()
+    {
+        var group = new GroupBox
+        {
+            Text = "Результаты проверок и рекомендации",
+            Width = 580,
+            Height = 160
+        };
+
+        _summaryTextBox.Multiline = true;
         _summaryTextBox.ScrollBars = ScrollBars.Vertical;
-        panel.Controls.Add(_summaryTextBox, 1, 4);
+        _summaryTextBox.Left = 10;
+        _summaryTextBox.Top = 22;
+        _summaryTextBox.Width = 425;
+        _summaryTextBox.Height = 125;
 
-        var clearButton = new Button { Text = "Очистить", Dock = DockStyle.Fill, Height = 34 };
-        clearButton.Click += (_, _) => ClearAllFields();
-        panel.Controls.Add(clearButton, 0, 5);
+        var btnPrint = new Button
+        {
+            Text = "Вывести\nрезультаты",
+            Left = 445,
+            Top = 22,
+            Width = 120,
+            Height = 38
+        };
+        btnPrint.Click += OnPrintSummary;
 
-        var closeButton = new Button { Text = "Выход", Dock = DockStyle.Fill, Height = 34 };
-        closeButton.Click += (_, _) => Close();
-        panel.Controls.Add(closeButton, 1, 5);
+        var btnSave = new Button
+        {
+            Text = "Сохранить\nрезультаты в\nфайл",
+            Left = 445,
+            Top = 68,
+            Width = 120,
+            Height = 48
+        };
+        btnSave.Click += OnSaveSummaryToFile;
 
-        Controls.Add(panel);
+        var btnExit = new Button
+        {
+            Text = "Выход",
+            Left = 445,
+            Top = 121,
+            Width = 120,
+            Height = 26
+        };
+        btnExit.Click += (_, _) => Close();
+
+        group.Controls.Add(_summaryTextBox);
+        group.Controls.Add(btnPrint);
+        group.Controls.Add(btnSave);
+        group.Controls.Add(btnExit);
+
+        return group;
+    }
+
+    private static void AddRow(Control parent, int top, string title, EventHandler handler, TextBox output)
+    {
+        var button = new Button
+        {
+            Text = title,
+            Left = 10,
+            Top = top,
+            Width = 205,
+            Height = 36
+        };
+        button.Click += handler;
+
+        output.Left = 223;
+        output.Top = top;
+        output.Width = 345;
+        output.Height = 36;
+
+        parent.Controls.Add(button);
+        parent.Controls.Add(output);
     }
 
     private static TextBox CreateReadOnlyTextBox(bool multiline = false) => new()
     {
-        Dock = DockStyle.Fill,
         ReadOnly = true,
-        Multiline = multiline,
-        Height = multiline ? 180 : 34
+        Multiline = multiline
     };
-
-    private static void AddRow(TableLayoutPanel panel, int row, string labelText, EventHandler onClick, TextBox output)
-    {
-        var label = new Label
-        {
-            Text = labelText,
-            AutoSize = true,
-            Dock = DockStyle.Fill,
-            TextAlign = ContentAlignment.MiddleLeft
-        };
-        panel.Controls.Add(label, 0, row);
-
-        var button = new Button { Text = "Проверить", Dock = DockStyle.Fill, Height = 34 };
-        button.Click += onClick;
-        panel.Controls.Add(button, 1, row);
-
-        panel.Controls.Add(output, 2, row);
-    }
 
     private void OnCheckInternet(object? sender, EventArgs e)
     {
@@ -88,46 +168,77 @@ internal sealed class MainForm : Form
         _internetTextBox.Text = result.Message;
     }
 
-    private void OnCheckInstalled(object? sender, EventArgs e)
+    private void OnCheckFirewallInstalled(object? sender, EventArgs e)
     {
         var result = SecurityChecks.CheckInstalledProtectionSoftware();
-        _installedTextBox.Text = $"МЭ: {AsYesNo(result.FirewallDetected)}; АВ: {AsYesNo(result.AntivirusDetected)}";
+        _firewallInstalledTextBox.Text = result.FirewallMessage;
     }
 
-    private void OnCheckFirewall(object? sender, EventArgs e)
+    private void OnCheckFirewallOperational(object? sender, EventArgs e)
     {
         var result = SecurityChecks.CheckFirewallOperational();
-        _firewallTextBox.Text = result.Message;
+        _firewallOperationalTextBox.Text = result.Message;
     }
 
-    private void OnCheckAntivirus(object? sender, EventArgs e)
+    private void OnCheckAntivirusInstalled(object? sender, EventArgs e)
+    {
+        var result = SecurityChecks.CheckInstalledProtectionSoftware();
+        _antivirusInstalledTextBox.Text = result.AntivirusMessage;
+    }
+
+    private void OnCheckAntivirusOperational(object? sender, EventArgs e)
     {
         var installed = SecurityChecks.CheckInstalledProtectionSoftware();
         var result = SecurityChecks.CheckAntivirusOperational(installed.AntivirusProducts);
-        _antivirusTextBox.Text = result.Message;
+        _antivirusOperationalTextBox.Text = result.Message;
+    }
+
+    private void OnTestAntivirus(object? sender, EventArgs e)
+    {
+        var installed = SecurityChecks.CheckInstalledProtectionSoftware();
+        var operational = SecurityChecks.CheckAntivirusOperational(installed.AntivirusProducts);
+
+        _antivirusTestTextBox.Text = operational.IsSuccess
+            ? "Тест пройден: антивирус активен, признаков сбоя не обнаружено."
+            : "Тест не пройден: требуется проверка настроек/состояния антивируса.";
     }
 
     private void OnPrintSummary(object? sender, EventArgs e)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("Результаты проведенного тестирования антивируса и межсетевого экрана");
+        sb.AppendLine("Результаты проведенного тестирования:");
         sb.AppendLine();
-        sb.AppendLine($"1. Интернет: {EnsureText(_internetTextBox.Text, "Проверка не выполнялась")}");
-        sb.AppendLine($"2. Наличие МЭ/АВ: {EnsureText(_installedTextBox.Text, "Проверка не выполнялась")}");
-        sb.AppendLine($"3. Работоспособность МЭ: {EnsureText(_firewallTextBox.Text, "Проверка не выполнялась")}");
-        sb.AppendLine($"4. Работоспособность АВ: {EnsureText(_antivirusTextBox.Text, "Проверка не выполнялась")}");
+        sb.AppendLine($"1. Интернет: {EnsureText(_internetTextBox.Text)}");
+        sb.AppendLine($"2. Наличие межсетевого экрана: {EnsureText(_firewallInstalledTextBox.Text)}");
+        sb.AppendLine($"3. Работоспособность межсетевого экрана: {EnsureText(_firewallOperationalTextBox.Text)}");
+        sb.AppendLine($"4. Наличие антивируса: {EnsureText(_antivirusInstalledTextBox.Text)}");
+        sb.AppendLine($"5. Работоспособность антивируса: {EnsureText(_antivirusOperationalTextBox.Text)}");
+        sb.AppendLine($"6. Тестирование антивируса: {EnsureText(_antivirusTestTextBox.Text)}");
+        sb.AppendLine();
+        sb.AppendLine("Рекомендация: при любых отрицательных результатах обновите сигнатуры АВ и проверьте правила МЭ.");
         _summaryTextBox.Text = sb.ToString();
     }
 
-    private void ClearAllFields()
+    private void OnSaveSummaryToFile(object? sender, EventArgs e)
     {
-        _internetTextBox.Clear();
-        _installedTextBox.Clear();
-        _firewallTextBox.Clear();
-        _antivirusTextBox.Clear();
-        _summaryTextBox.Clear();
+        if (string.IsNullOrWhiteSpace(_summaryTextBox.Text))
+        {
+            OnPrintSummary(sender, e);
+        }
+
+        using var saveDialog = new SaveFileDialog
+        {
+            Title = "Сохранение результатов",
+            Filter = "Текстовый файл (*.txt)|*.txt",
+            FileName = $"security-check-results-{DateTime.Now:yyyyMMdd-HHmmss}.txt"
+        };
+
+        if (saveDialog.ShowDialog(this) == DialogResult.OK)
+        {
+            File.WriteAllText(saveDialog.FileName, _summaryTextBox.Text, Encoding.UTF8);
+        }
     }
 
-    private static string EnsureText(string text, string fallback) => string.IsNullOrWhiteSpace(text) ? fallback : text;
-    private static string AsYesNo(bool value) => value ? "Да" : "Нет";
+    private static string EnsureText(string text) =>
+        string.IsNullOrWhiteSpace(text) ? "Проверка не выполнялась" : text;
 }
