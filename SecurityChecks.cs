@@ -6,116 +6,98 @@ namespace SecurityCheckApp;
 
 internal static class SecurityChecks
 {
-    // Простые пути для учебного примера (Windows).
-    private static readonly string[] FirewallExePaths =
-    {
-        @"C:\Windows\System32\FirewallAPI.dll"
-    };
-
-    private static readonly string[] AntivirusExePaths =
-    {
-        @"C:\Program Files\Windows Defender\MSASCuiL.exe",
-        @"C:\ProgramData\Microsoft\Windows Defender\Platform"
-    };
-
-    internal static CheckResult CheckInternetConnection(string host)
+    public static string CheckInternetConnection()
     {
         IPStatus status = IPStatus.Unknown;
 
         try
         {
-            status = new Ping().Send(host, 1500)!.Status;
+            status = new Ping().Send("yandex.ru", 1500)!.Status;
         }
-        catch
+        catch (Exception)
         {
-            // Для простоты в учебном коде оставляем пустой catch,
-            // как в методичке.
+            status = IPStatus.Unknown;
         }
 
         if (status == IPStatus.Success)
         {
-            return new CheckResult(true, "Данный компьютер подключен к интернету");
+            return "Данный компьютер подключен к интернету";
         }
 
-        return new CheckResult(false, "Данный компьютер не подключен к интернету");
+        return "Данный компьютер не подключен к интернету";
     }
 
-    internal static InstalledSoftwareCheckResult CheckInstalledProtectionSoftware()
+    public static string CheckFirewallInstalled()
     {
-        bool firewallInstalled = FirewallExePaths.Any(File.Exists);
-        bool antivirusInstalled = AntivirusExePaths.Any(path => File.Exists(path) || Directory.Exists(path));
+        // Простой вариант из методички: проверка наличия файла.
+        if (File.Exists(@"C:\Windows\System32\FirewallAPI.dll"))
+        {
+            return "Фаервол установлен!";
+        }
 
-        string firewallText = firewallInstalled
-            ? "Фаервол установлен!"
-            : "Фаервол не установлен!";
-
-        string antivirusText = antivirusInstalled
-            ? "Антивирус установлен!"
-            : "Антивирус не установлен!";
-
-        var antivirusProducts = antivirusInstalled
-            ? new List<string> { "Антивирус обнаружен" }
-            : new List<string>();
-
-        return new InstalledSoftwareCheckResult(
-            firewallInstalled,
-            firewallText,
-            antivirusInstalled,
-            antivirusText,
-            antivirusProducts);
+        return "Фаервол не установлен!";
     }
 
-    internal static CheckResult CheckFirewallOperational()
+    public static string CheckAntivirusInstalled()
+    {
+        // Простой вариант из методички: проверка наличия файла/папки.
+        if (File.Exists(@"C:\Program Files\Windows Defender\MSASCuiL.exe") ||
+            Directory.Exists(@"C:\ProgramData\Microsoft\Windows Defender\Platform"))
+        {
+            return "Антивирус установлен!";
+        }
+
+        return "Антивирус не установлен!";
+    }
+
+    public static string CheckFirewallOperational()
     {
         using var client = new WebClient();
 
         try
         {
-            // Учебная идея из методички: пробуем внешний ресурс.
-            _ = client.DownloadString("http://example.com");
+            _ = client.DownloadString("http://yandex.ru");
         }
-        catch
+        catch (Exception)
         {
-            return new CheckResult(true, "Межсетевой экран функционирует правильно!");
+            return "Межсетевой экран функционирует правильно!";
         }
 
-        return new CheckResult(false, "Межсетевой экран функционирует неверно, или не функционирует!");
+        return "Межсетевой экран функционирует неверно, или не функционирует!";
     }
 
-    internal static CheckResult CheckAntivirusOperational(IReadOnlyCollection<string> antivirusProducts)
+    public static string CheckAntivirusOperational()
     {
-        if (antivirusProducts.Count == 0)
-        {
-            return new CheckResult(false, "Антивирус не найден — проверка невозможна.");
-        }
-
         string taskList = RunCommand("tasklist");
 
-        bool residentModuleRunning = taskList.Contains("MsMpEng", StringComparison.OrdinalIgnoreCase)
-                                     || taskList.Contains("avp", StringComparison.OrdinalIgnoreCase)
-                                     || taskList.Contains("avast", StringComparison.OrdinalIgnoreCase)
-                                     || taskList.Contains("avg", StringComparison.OrdinalIgnoreCase);
-
-        if (residentModuleRunning)
+        if (taskList.Contains("MsMpEng", StringComparison.OrdinalIgnoreCase))
         {
-            return new CheckResult(true, "Резидентный модуль антивируса работает.");
+            return "Резидентный модуль антивируса работает.";
         }
 
-        return new CheckResult(false, "Резидентный модуль антивируса не запущен.");
+        if (taskList.Contains("avp", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Резидентный модуль антивируса работает.";
+        }
+
+        if (taskList.Contains("avast", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Резидентный модуль антивируса работает.";
+        }
+
+        return "Резидентный модуль антивируса не запущен.";
     }
 
     private static string RunCommand(string fileName)
     {
         try
         {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = fileName,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+            var startInfo = new ProcessStartInfo();
+            startInfo.FileName = fileName;
+            startInfo.RedirectStandardOutput = true;
+            startInfo.RedirectStandardError = true;
+            startInfo.UseShellExecute = false;
+            startInfo.CreateNoWindow = true;
 
             using var process = Process.Start(startInfo);
             if (process == null)
@@ -127,18 +109,9 @@ internal static class SecurityChecks
             process.WaitForExit(5000);
             return output;
         }
-        catch
+        catch (Exception)
         {
             return string.Empty;
         }
     }
 }
-
-internal sealed record CheckResult(bool IsSuccess, string Message);
-
-internal sealed record InstalledSoftwareCheckResult(
-    bool FirewallDetected,
-    string FirewallMessage,
-    bool AntivirusDetected,
-    string AntivirusMessage,
-    IReadOnlyList<string> AntivirusProducts);

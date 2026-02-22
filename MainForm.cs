@@ -193,43 +193,41 @@ internal sealed class MainForm : Form
 
     private void OnCheckInternet(object? sender, EventArgs e)
     {
-        var result = SecurityChecks.CheckInternetConnection("ya.ru");
-        _internetTextBox.Text = result.Message;
+        _internetTextBox.Text = SecurityChecks.CheckInternetConnection();
     }
 
     private void OnCheckFirewallInstalled(object? sender, EventArgs e)
     {
-        var result = SecurityChecks.CheckInstalledProtectionSoftware();
-        _firewallInstalledTextBox.Text = result.FirewallMessage;
+        _firewallInstalledTextBox.Text = SecurityChecks.CheckFirewallInstalled();
     }
 
     private void OnCheckFirewallOperational(object? sender, EventArgs e)
     {
-        var result = SecurityChecks.CheckFirewallOperational();
-        _firewallOperationalTextBox.Text = result.Message;
+        _firewallOperationalTextBox.Text = SecurityChecks.CheckFirewallOperational();
     }
 
     private void OnCheckAntivirusInstalled(object? sender, EventArgs e)
     {
-        var result = SecurityChecks.CheckInstalledProtectionSoftware();
-        _antivirusInstalledTextBox.Text = result.AntivirusMessage;
+        _antivirusInstalledTextBox.Text = SecurityChecks.CheckAntivirusInstalled();
     }
 
     private void OnCheckAntivirusOperational(object? sender, EventArgs e)
     {
-        var installed = SecurityChecks.CheckInstalledProtectionSoftware();
-        var result = SecurityChecks.CheckAntivirusOperational(installed.AntivirusProducts);
-        _antivirusOperationalTextBox.Text = result.Message;
+        _antivirusOperationalTextBox.Text = SecurityChecks.CheckAntivirusOperational();
     }
 
     private void OnTestAntivirus(object? sender, EventArgs e)
     {
-        var installed = SecurityChecks.CheckInstalledProtectionSoftware();
-        var operational = SecurityChecks.CheckAntivirusOperational(installed.AntivirusProducts);
+        string antivirusState = SecurityChecks.CheckAntivirusOperational();
 
-        _antivirusTestTextBox.Text = operational.IsSuccess
-            ? "Тест пройден: антивирус активен, признаков сбоя не обнаружено."
-            : "Тест не пройден: требуется проверка настроек/состояния антивируса.";
+        if (antivirusState == "Резидентный модуль антивируса работает.")
+        {
+            _antivirusTestTextBox.Text = "Тест пройден: антивирус активен.";
+        }
+        else
+        {
+            _antivirusTestTextBox.Text = "Тест не пройден: антивирус не активен.";
+        }
     }
 
     private void OnPrintSummary(object? sender, EventArgs e)
