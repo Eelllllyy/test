@@ -1,109 +1,116 @@
 using System.Diagnostics;
+using System.Net;
 using System.Net.NetworkInformation;
-using System.Runtime.InteropServices;
 
 namespace SecurityCheckApp;
 
 internal static class SecurityChecks
 {
+    // Простые пути для учебного примера (Windows).
+    private static readonly string[] FirewallExePaths =
+    {
+        @"C:\Windows\System32\FirewallAPI.dll"
+    };
+
+    private static readonly string[] AntivirusExePaths =
+    {
+        @"C:\Program Files\Windows Defender\MSASCuiL.exe",
+        @"C:\ProgramData\Microsoft\Windows Defender\Platform"
+    };
+
     internal static CheckResult CheckInternetConnection(string host)
     {
+        IPStatus status = IPStatus.Unknown;
+
         try
         {
-            using var ping = new Ping();
-            var reply = ping.Send(host, 1500);
-            return reply?.Status == IPStatus.Success
-                ? new CheckResult(true, $"Подключение есть (Ping {host}: {reply.RoundtripTime} мс).")
-                : new CheckResult(false, $"Подключение отсутствует или нестабильно (статус: {reply?.Status}).");
+            status = new Ping().Send(host, 1500)!.Status;
         }
-        catch (Exception ex)
+        catch
         {
-            return new CheckResult(false, $"Ошибка проверки сети: {ex.Message}");
+            // Для простоты в учебном коде оставляем пустой catch,
+            // как в методичке.
         }
+
+        if (status == IPStatus.Success)
+        {
+            return new CheckResult(true, "Данный компьютер подключен к интернету");
+        }
+
+        return new CheckResult(false, "Данный компьютер не подключен к интернету");
     }
 
     internal static InstalledSoftwareCheckResult CheckInstalledProtectionSoftware()
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return new InstalledSoftwareCheckResult(false, "Только Windows", false, "Только Windows", Array.Empty<string>());
-        }
+        bool firewallInstalled = FirewallExePaths.Any(File.Exists);
+        bool antivirusInstalled = AntivirusExePaths.Any(path => File.Exists(path) || Directory.Exists(path));
 
-        var firewallService = ExecuteCommand("sc", "query MpsSvc");
-        var firewallDetected = firewallService.Output.Contains("SERVICE_NAME: MpsSvc", StringComparison.OrdinalIgnoreCase);
+        string firewallText = firewallInstalled
+            ? "Фаервол установлен!"
+            : "Фаервол не установлен!";
 
-        var antivirusProducts = QueryWindowsAntivirusProducts();
-        var antivirusDetected = antivirusProducts.Count > 0;
+        string antivirusText = antivirusInstalled
+            ? "Антивирус установлен!"
+            : "Антивирус не установлен!";
+
+        var antivirusProducts = antivirusInstalled
+            ? new List<string> { "Антивирус обнаружен" }
+            : new List<string>();
 
         return new InstalledSoftwareCheckResult(
-            firewallDetected,
-            firewallDetected ? "Служба Windows Firewall обнаружена." : "Служба Windows Firewall не обнаружена.",
-            antivirusDetected,
-            antivirusDetected ? $"Найдено: {string.Join(", ", antivirusProducts)}" : "Антивирус не найден.",
+            firewallInstalled,
+            firewallText,
+            antivirusInstalled,
+            antivirusText,
             antivirusProducts);
     }
 
     internal static CheckResult CheckFirewallOperational()
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        using var client = new WebClient();
+
+        try
         {
-            return new CheckResult(false, "Проверка доступна только в Windows.");
+            // Учебная идея из методички: пробуем внешний ресурс.
+            _ = client.DownloadString("http://example.com");
+        }
+        catch
+        {
+            return new CheckResult(true, "Межсетевой экран функционирует правильно!");
         }
 
-        var service = ExecuteCommand("sc", "query MpsSvc");
-        var serviceRunning = service.Output.Contains("RUNNING", StringComparison.OrdinalIgnoreCase);
-        var profiles = ExecuteCommand("netsh", "advfirewall show allprofiles");
-        var enabledMentions = profiles.Output.Split('\n')
-            .Count(line => line.Contains("State", StringComparison.OrdinalIgnoreCase)
-                        && line.Contains("ON", StringComparison.OrdinalIgnoreCase));
-
-        return serviceRunning && enabledMentions > 0
-            ? new CheckResult(true, $"МЭ работает (служба активна, профилей ON: {enabledMentions}).")
-            : new CheckResult(false, "МЭ отключен или настроен неверно.");
+        return new CheckResult(false, "Межсетевой экран функционирует неверно, или не функционирует!");
     }
 
     internal static CheckResult CheckAntivirusOperational(IReadOnlyCollection<string> antivirusProducts)
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            return new CheckResult(false, "Проверка доступна только в Windows.");
-        }
-
         if (antivirusProducts.Count == 0)
         {
             return new CheckResult(false, "Антивирус не найден — проверка невозможна.");
         }
 
-        var processList = ExecuteCommand("tasklist", string.Empty).Output;
-        var knownProcessHints = new[] { "MsMpEng", "avp", "avg", "avast", "ekrn", "mcshield", "savservice", "bdagent" };
-        var hasResidentModule = knownProcessHints.Any(h => processList.Contains(h, StringComparison.OrdinalIgnoreCase));
+        string taskList = RunCommand("tasklist");
 
-        return hasResidentModule
-            ? new CheckResult(true, "Обнаружены признаки работы резидентного модуля антивируса.")
-            : new CheckResult(false, "Резидентный модуль антивируса не обнаружен в процессах.");
+        bool residentModuleRunning = taskList.Contains("MsMpEng", StringComparison.OrdinalIgnoreCase)
+                                     || taskList.Contains("avp", StringComparison.OrdinalIgnoreCase)
+                                     || taskList.Contains("avast", StringComparison.OrdinalIgnoreCase)
+                                     || taskList.Contains("avg", StringComparison.OrdinalIgnoreCase);
+
+        if (residentModuleRunning)
+        {
+            return new CheckResult(true, "Резидентный модуль антивируса работает.");
+        }
+
+        return new CheckResult(false, "Резидентный модуль антивируса не запущен.");
     }
 
-    private static List<string> QueryWindowsAntivirusProducts()
-    {
-        var command = "Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntivirusProduct | Select-Object -ExpandProperty displayName";
-        var result = ExecuteCommand("powershell", $"-NoProfile -Command \"{command}\"");
-
-        return result.Output
-            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
-            .Select(v => v.Trim())
-            .Where(v => !string.IsNullOrWhiteSpace(v))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToList();
-    }
-
-    private static (string Output, string Error) ExecuteCommand(string fileName, string args)
+    private static string RunCommand(string fileName)
     {
         try
         {
             var startInfo = new ProcessStartInfo
             {
                 FileName = fileName,
-                Arguments = args,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -111,20 +118,18 @@ internal static class SecurityChecks
             };
 
             using var process = Process.Start(startInfo);
-            if (process is null)
+            if (process == null)
             {
-                return (string.Empty, "Не удалось запустить процесс.");
+                return string.Empty;
             }
 
-            var output = process.StandardOutput.ReadToEnd();
-            var error = process.StandardError.ReadToEnd();
+            string output = process.StandardOutput.ReadToEnd();
             process.WaitForExit(5000);
-
-            return (output, error);
+            return output;
         }
-        catch (Exception ex)
+        catch
         {
-            return (string.Empty, ex.Message);
+            return string.Empty;
         }
     }
 }
