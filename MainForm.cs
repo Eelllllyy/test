@@ -19,6 +19,7 @@ internal sealed class MainForm : Form
     {
         Text = "Программа проверки информационной безопасности";
         ClientSize = new Size(1320, 1060);
+        MinimumSize = new Size(1200, 900);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
@@ -47,7 +48,7 @@ internal sealed class MainForm : Form
         var group = CreateGroup("Проверка межсетевого экрана");
         var grid = CreateChecksGrid();
 
-        AddCheckRow(grid, 0, "Проверка подключения к Интернету", OnCheckInternet, _internetTextBox);
+        AddCheckRow(grid, 0, "Проверка подключения\nк Интернету", OnCheckInternet, _internetTextBox);
         AddCheckRow(grid, 1, "Проверка наличия установленного\nмежсетевого экрана", OnCheckFirewallInstalled, _firewallInstalledTextBox);
         AddCheckRow(grid, 2, "Проверка работоспособности\nмежсетевого экрана", OnCheckFirewallOperational, _firewallOperationalTextBox);
 
@@ -62,7 +63,7 @@ internal sealed class MainForm : Form
 
         AddCheckRow(grid, 0, "Проверка наличия установленного\nантивируса", OnCheckAntivirusInstalled, _antivirusInstalledTextBox);
         AddCheckRow(grid, 1, "Проверка работоспособности\nантивирусного ПО", OnCheckAntivirusOperational, _antivirusOperationalTextBox);
-        AddCheckRow(grid, 2, "Тестирование антивирусного ПО", OnTestAntivirus, _antivirusTestTextBox);
+        AddCheckRow(grid, 2, "Тестирование\nантивирусного ПО", OnTestAntivirus, _antivirusTestTextBox);
 
         group.Controls.Add(grid);
         return group;
@@ -80,8 +81,8 @@ internal sealed class MainForm : Form
             RowCount = 1
         };
 
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 83));
-        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 17));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 84));
+        layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16));
 
         _summaryTextBox.Multiline = true;
         _summaryTextBox.ScrollBars = ScrollBars.Vertical;
@@ -94,9 +95,9 @@ internal sealed class MainForm : Form
             RowCount = 4,
             Padding = new Padding(10, 20, 10, 10)
         };
-        rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
-        rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 110));
-        rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 88));
+        rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
+        rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 124));
+        rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
         rightButtons.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         var btnPrint = CreateActionButton("Вывести\nрезультаты", OnPrintSummary);
@@ -131,11 +132,11 @@ internal sealed class MainForm : Form
             Padding = new Padding(8)
         };
 
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 500));
-        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 84));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
+        grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
 
         return grid;
     }
@@ -147,7 +148,10 @@ internal sealed class MainForm : Form
             Text = title,
             Dock = DockStyle.Fill,
             Margin = new Padding(0, 0, 12, 8),
-            Font = new Font("Segoe UI", 14F, FontStyle.Regular, GraphicsUnit.Point)
+            Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point),
+            TextAlign = ContentAlignment.MiddleCenter,
+            AutoSize = false,
+            AutoEllipsis = false
         };
         button.Click += handler;
 
@@ -166,7 +170,10 @@ internal sealed class MainForm : Form
             Text = text,
             Dock = DockStyle.Fill,
             Margin = new Padding(0, 0, 0, 12),
-            Font = new Font("Segoe UI", 14F, FontStyle.Regular, GraphicsUnit.Point)
+            Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point),
+            TextAlign = ContentAlignment.MiddleCenter,
+            AutoSize = false,
+            AutoEllipsis = false
         };
         button.Click += onClick;
         return button;
