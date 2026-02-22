@@ -5,6 +5,10 @@ namespace SecurityCheckApp;
 
 internal sealed class MainForm : Form
 {
+    // Простые размеры, чтобы интерфейс не "ломался" и текст не обрезался.
+    private const int SectionHeight = 340;
+    private const int CheckRowHeight = 100;
+
     private readonly TextBox _internetTextBox = CreateReadOnlyTextBox();
     private readonly TextBox _firewallInstalledTextBox = CreateReadOnlyTextBox();
     private readonly TextBox _firewallOperationalTextBox = CreateReadOnlyTextBox();
@@ -18,8 +22,8 @@ internal sealed class MainForm : Form
     public MainForm()
     {
         Text = "Программа проверки информационной безопасности";
-        ClientSize = new Size(1320, 1060);
-        MinimumSize = new Size(1200, 900);
+        ClientSize = new Size(1320, 1100);
+        MinimumSize = new Size(1260, 980);
         StartPosition = FormStartPosition.CenterScreen;
         FormBorderStyle = FormBorderStyle.FixedSingle;
         MaximizeBox = false;
@@ -32,8 +36,9 @@ internal sealed class MainForm : Form
             RowCount = 3
         };
 
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 300));
-        root.RowStyles.Add(new RowStyle(SizeType.Absolute, 300));
+        // Увеличили первые 2 секции, чтобы третьи кнопки были видны полностью.
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, SectionHeight));
+        root.RowStyles.Add(new RowStyle(SizeType.Absolute, SectionHeight));
         root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
         root.Controls.Add(BuildFirewallGroup(), 0, 0);
@@ -95,6 +100,7 @@ internal sealed class MainForm : Form
             RowCount = 4,
             Padding = new Padding(10, 20, 10, 10)
         };
+
         rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
         rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 124));
         rightButtons.RowStyles.Add(new RowStyle(SizeType.Absolute, 96));
@@ -134,9 +140,10 @@ internal sealed class MainForm : Form
 
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 40));
         grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 60));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
-        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, 92));
+
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, CheckRowHeight));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, CheckRowHeight));
+        grid.RowStyles.Add(new RowStyle(SizeType.Absolute, CheckRowHeight));
 
         return grid;
     }
@@ -150,7 +157,6 @@ internal sealed class MainForm : Form
             Margin = new Padding(0, 0, 12, 8),
             Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point),
             TextAlign = ContentAlignment.MiddleCenter,
-            AutoSize = false,
             AutoEllipsis = false
         };
         button.Click += handler;
@@ -172,7 +178,6 @@ internal sealed class MainForm : Form
             Margin = new Padding(0, 0, 0, 12),
             Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point),
             TextAlign = ContentAlignment.MiddleCenter,
-            AutoSize = false,
             AutoEllipsis = false
         };
         button.Click += onClick;
