@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.ServiceProcess;
 
 namespace SecurityCheckApp;
 
@@ -29,7 +30,6 @@ internal static class SecurityChecks
 
     public static string CheckFirewallInstalled()
     {
-        // Простой вариант из методички: проверка наличия файла.
         if (File.Exists(@"C:\Windows\System32\FirewallAPI.dll"))
         {
             return "Фаервол установлен!";
@@ -40,7 +40,6 @@ internal static class SecurityChecks
 
     public static string CheckAntivirusInstalled()
     {
-        // Простой вариант из методички: проверка наличия файла/папки.
         if (File.Exists(@"C:\Program Files\Windows Defender\MSASCuiL.exe") ||
             Directory.Exists(@"C:\ProgramData\Microsoft\Windows Defender\Platform"))
         {
@@ -50,21 +49,26 @@ internal static class SecurityChecks
         return "Антивирус не установлен!";
     }
 
-    public static string CheckFirewallOperational()
+public static string CheckFirewallOperational()
+{
+    try
     {
-        using var client = new WebClient();
+        ServiceController sc = new ServiceController("MpsSvc");
 
-        try
+        if (sc.Status == ServiceControllerStatus.Running)
         {
-            _ = client.DownloadString("http://yandex.ru");
+            return "МЭ функционирует правильно.";
         }
-        catch (Exception)
+        else
         {
-            return "Межсетевой экран функционирует правильно!";
+            return "Межсетевой экран функционирует неверно, или не функционирует";
         }
-
-        return "Межсетевой экран функционирует неверно, или не функционирует!";
     }
+    catch
+    {
+        return "Не удалось определить состояние межсетевого экрана.";
+    }
+}
 
     public static string CheckAntivirusOperational()
     {

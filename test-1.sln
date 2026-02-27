@@ -1,0 +1,30 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecurityCheckApp.Console", "SecurityCheckApp.Console.csproj", "{9A8AA532-AF09-3B19-DC36-CE8913A795A9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SecurityCheckApp", "SecurityCheckApp.csproj", "{782310CB-2735-B74A-70B5-52EE6A6E23BB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9A8AA532-AF09-3B19-DC36-CE8913A795A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A8AA532-AF09-3B19-DC36-CE8913A795A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A8AA532-AF09-3B19-DC36-CE8913A795A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A8AA532-AF09-3B19-DC36-CE8913A795A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{782310CB-2735-B74A-70B5-52EE6A6E23BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{782310CB-2735-B74A-70B5-52EE6A6E23BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{782310CB-2735-B74A-70B5-52EE6A6E23BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{782310CB-2735-B74A-70B5-52EE6A6E23BB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B8916D77-F1ED-494A-A23D-590BFEA6F8EF}
+	EndGlobalSection
+EndGlobal
